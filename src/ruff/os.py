@@ -17,7 +17,8 @@ if WINDOWS:
     RESET = ''
 else:
   class Color(object):
-    WHITE = '\033[95m'
+    CYAN = '\033[96m'
+    MAGENTA = '\033[95m'
     BLUE = '\033[94m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'

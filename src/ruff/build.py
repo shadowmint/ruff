@@ -11,12 +11,17 @@ class Build(object):
 
   def __init__(self):
     self._orders = []
+    self._dependencies = []
 
   def execute(self):
     """ Run all the orders in this builder """
+    for dep in self._dependencies:
+      dep.execute()
     for order in self._orders:
       try:
-        if order['type'] == 'command':
+        if order['type'] == 'notice':
+          print('\n- {0}{1}{2}:'.format(Color.CYAN, order['message'], Color.RESET))
+        elif order['type'] == 'command':
           print('- {0}Executing custom operation{1}: {2}'.format(Color.GREEN, Color.RESET, order['command']))
           order['command'](State.instance.path)
         elif order['type'] == 'chdir':
@@ -38,7 +43,29 @@ class Build(object):
     else:
       print('- {0}Failed{1}:'.format(Color.RED, Color.RESET))
     if message is not None:
-      print(message)
+      print(message.rstrip())
+
+  def notice(self, msg, unique=True):
+    """ Display some arbitrary message 
+        By default only allow a single notice (ie. name) per build.
+        Unique notices are always put to the start of the executation stack.
+        @param unique: Should this notice be unique.
+    """
+    if unique:
+      self._orders = filter(lambda x: x['type'] != 'notice', self._orders)
+      self._orders.insert(0, {'type': 'notice', 'message': msg})
+    else:
+      self._orders.append({'type': 'notice', 'message': msg})
+    return self
+
+  def depend(self, build):
+    """ If this build must run after a given dependency, add it here.
+        When execute() is invoked, dependencies are run first.
+
+        NB. This is a naive dependency tracker only; if multiple things
+        depend on a task, it will be invoked multiple times.
+    """
+    self._dependencies.append(build)
 
   def run(self, *largs):
     """ Run a command on build """
@@ -68,7 +95,9 @@ class Build(object):
     if not success:
       self._report_error(message=output)
     else:
-      print(output)
+      output = output.rstrip()
+      if output:
+        print(output.rstrip("\n\r"))
 
   def _collect(self, pattern, collector, recurse):
     """ Invoke the collector. It should be in the form:

@@ -237,11 +237,13 @@ and not start the server.
     Given the finite file 'file' (use __file__ typically) this will return
     the absolute path segment/segment/... relative to the given file.
 
-    - ruff.run(file=None, callback=None, poll=0.1)
+    - ruff.run(file=None, callback=None, poll=0.1, build=False)
     Run ruff until it gets an interrupt signal, using dirname(file) as the
     current working context. If the callback is not None it is invoked every
     poll; the poll interval controls how often ruff polls for file changes.
-    The default for file is the current working directory.
+    If build is true, all build steps are invoked and the loop only gets
+    run once; servers will not be invoked and commands may stop early.
+    The default for file is the current working directory. 
 
     - ruff.reset()
     Create a new ruff state object, if for some obscure reason it is required.
@@ -288,3 +290,10 @@ and not start the server.
     like, turn all the .less files into .css files using lessc. An iterator
     of matches is passed to the callback during the build. See the examples;
     this is not the most obvious function to use.
+
+    - ruff.Build.notice('message...')
+    Print an arbitrary message; this is useful for debugging and keeping
+    track of exactly what build sequence is being executed.
+
+    - ruff.Build.depend(buidl)
+    Add a dependency to be executed before the given build task.

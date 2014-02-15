@@ -27,11 +27,17 @@ def path(path, *largs):
   return abspath(join(*segments))
 
 
-def run(path=None, callback=None, poll=0.1):
+def run(path=None, callback=None, poll=0.1, build=True):
   """ Poll for file changes periodically and run on the path of the given file
+
+      Sometimes its handy to use a build step; run through completely
+      but don't trigger long running processes like servers, and
+      don't poll for changes.
+
       :param string path: The path to a file, eg. from __file__
       :param lambda callback: A callback to invoke every round
       :param float poll: The callback interval.
+      :param boolean build: If true, run as a build step.
   """
   if path is None:
     path = os.getcwd()
@@ -42,9 +48,10 @@ def run(path=None, callback=None, poll=0.1):
     State.instance.command_pids.append(pid)
 
   # run servers
-  for record in State.instance.servers:
-    pid = run_server(*record)
-    State.instance.server_pids.append(pid)
+  if not build:
+    for record in State.instance.servers:
+      pid = run_server(*record)
+      State.instance.server_pids.append(pid)
 
   # run local
   context = abspath(dirname(path))
@@ -54,6 +61,11 @@ def run(path=None, callback=None, poll=0.1):
       ran = False
       for binding in State.instance.bindings:
         binding.check()
+
+        # Always run if this is a build step
+        if build:  
+          binding.match = True
+
       for binding in State.instance.bindings:
         victory = binding.run()
         if victory:
@@ -66,6 +78,10 @@ def run(path=None, callback=None, poll=0.1):
           break
     except Exception as e:
       pass
+
+    # Stop early if this is a build step.
+    if build:
+      break
 
   # halt servers and commands
   for pid in State.instance.server_pids:
