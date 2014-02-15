@@ -67,6 +67,8 @@ class Build(object):
     success, output = run(*kargs, shell=WINDOWS, capture_output=True)
     if not success:
       self._report_error(message=output)
+    else:
+      print(output)
 
   def _collect(self, pattern, collector, recurse):
     """ Invoke the collector. It should be in the form:
